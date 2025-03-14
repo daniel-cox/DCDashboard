@@ -27,7 +27,9 @@ export function ToolsPage() {
       if (!response.ok) throw new Error("Failed to fetch DNS records")
 
       const data = await response.json()
-      setDnsData(data.error ? null : data)
+      console.log("API Response:", data)
+
+      setDnsData(data)
       setError(data.error || null)
     } catch (error) {
       setError(
@@ -101,7 +103,7 @@ export function ToolsPage() {
         {/* DNS Results */}
         {dnsData && (
           <div className="p-4 mt-4 bg-gray-100 rounded dark:bg-gray-700">
-            {["A", "AAAA", "MX", "NS"].map((key) =>
+            {["a", "aaaa", "mx", "ns"].map((key) =>
               dnsData[key] ? (
                 <div key={key} className="mb-2">
                   <strong className="text-gray-700 capitalize dark:text-gray-200">
