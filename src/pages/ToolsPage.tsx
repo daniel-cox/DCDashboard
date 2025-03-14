@@ -1,4 +1,4 @@
-import { Moon, Sun, Globe } from "lucide-react"
+import { Moon, Sun, Globe, Check } from "lucide-react"
 import { useState } from "react"
 import { useTheme } from "../context/ThemeContext"
 
@@ -111,8 +111,9 @@ export function ToolsPage() {
                   </strong>
                   <ul className="text-gray-800 dark:text-gray-300">
                     {dnsData[key].map((record, index) => (
-                      <li key={index} className="ml-4">
-                        • {record}
+                      <li key={index} className="flex items-center gap-2 ml-4">
+                        <Check className="text-green-500" size={14} />
+                        {record}
                       </li>
                     ))}
                   </ul>
