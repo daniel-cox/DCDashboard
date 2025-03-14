@@ -9,34 +9,32 @@ export function ToolsPage() {
     null
   )
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const fetchDNSRecords = async () => {
-    if (!domain) return
+    if (!domain || loading) return
 
+    setLoading(true)
     setDnsData(null)
     setError(null)
 
     try {
       const response = await fetch(
         `https://host.io/api/dns/${domain}?token=${
-          import.meta.env.VITE_HOST_IO_API_KEY
+          import.meta.env.VITE_API_KEY
         }`
       )
-      if (!response.ok) {
-        throw new Error("Failed to fetch DNS records")
-      }
+      if (!response.ok) throw new Error("Failed to fetch DNS records")
 
       const data = await response.json()
-
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setDnsData(data)
-      }
-    } catch (error: unknown) {
+      setDnsData(data.error ? null : data)
+      setError(data.error || null)
+    } catch (error) {
       setError(
         error instanceof Error ? error.message : "An unknown error occurred"
       )
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -89,9 +87,12 @@ export function ToolsPage() {
 
         <button
           onClick={fetchDNSRecords}
-          className="w-full px-4 py-2 mt-4 text-white bg-blue-600 rounded hover:bg-blue-700"
+          disabled={loading}
+          className={`w-full px-4 py-2 mt-4 text-white bg-blue-600 rounded hover:bg-blue-700 ${
+            loading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
-          Get DNS Records
+          {loading ? "Loading..." : "Get DNS Records"}
         </button>
 
         {/* Error Message */}
@@ -100,7 +101,7 @@ export function ToolsPage() {
         {/* DNS Results */}
         {dnsData && (
           <div className="p-4 mt-4 bg-gray-100 rounded dark:bg-gray-700">
-            {["a", "aaaa", "mx", "ns"].map((key) =>
+            {["A", "AAAA", "MX", "NS"].map((key) =>
               dnsData[key] ? (
                 <div key={key} className="mb-2">
                   <strong className="text-gray-700 capitalize dark:text-gray-200">
