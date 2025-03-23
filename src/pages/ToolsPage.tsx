@@ -5,11 +5,24 @@ import { useTheme } from "../context/ThemeContext"
 export function ToolsPage() {
   const { theme, toggleTheme } = useTheme()
   const [domain, setDomain] = useState("")
-  const [dnsData, setDnsData] = useState<{ [key: string]: string[] } | null>(
-    null
-  )
-  const [error, setError] = useState<string | null>(null)
+  const [dnsData, setDnsData] = useState(null)
+  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  // Helper function to convert Unix timestamps to readable dates
+  const formatDateIfTimestamp = (value) => {
+    if (Array.isArray(value)) {
+      return value.map((v) =>
+        typeof v === "number" && v > 1000000000
+          ? new Date(v * 1000).toUTCString()
+          : v
+      )
+    }
+    if (typeof value === "number" && value > 1000000000) {
+      return new Date(value * 1000).toUTCString()
+    }
+    return value
+  }
 
   const fetchDNSRecords = async () => {
     if (!domain || loading) return
@@ -20,21 +33,33 @@ export function ToolsPage() {
 
     try {
       const response = await fetch(
-        `https://host.io/api/dns/${domain}?token=${
-          import.meta.env.VITE_API_KEY
-        }`
+        `https://api.api-ninjas.com/v1/whois?domain=${domain}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Api-Key": "+UNuX6USS+afrEhWMI6CNQ==rYylMgi8TsDwq7UO",
+            "Content-Type": "application/json",
+          },
+        }
       )
+
       if (!response.ok) throw new Error("Failed to fetch DNS records")
 
       const data = await response.json()
-      console.log("API Response:", data)
+      console.log("Raw API Data:", data)
 
-      setDnsData(data)
-      setError(data.error || null)
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "An unknown error occurred"
+      // Process data to convert timestamps
+      const formattedData = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [
+          key,
+          formatDateIfTimestamp(value),
+        ])
       )
+
+      console.log("Formatted Data:", formattedData)
+      setDnsData(formattedData)
+    } catch (error) {
+      setError("Failed to fetch DNS records")
     } finally {
       setLoading(false)
     }
@@ -103,23 +128,27 @@ export function ToolsPage() {
         {/* DNS Results */}
         {dnsData && (
           <div className="p-4 mt-4 bg-gray-100 rounded dark:bg-gray-700">
-            {["a", "aaaa", "mx", "ns"].map((key) =>
-              dnsData[key] ? (
-                <div key={key} className="mb-2">
-                  <strong className="text-gray-700 capitalize dark:text-gray-200">
-                    {key} Records:
-                  </strong>
-                  <ul className="text-gray-800 dark:text-gray-300">
-                    {dnsData[key].map((record, index) => (
+            {Object.keys(dnsData).map((key) => (
+              <div key={key} className="mb-2">
+                <strong className="text-gray-700 capitalize dark:text-gray-200">
+                  {key} Records:
+                </strong>
+                <ul className="text-gray-800 dark:text-gray-300">
+                  {Array.isArray(dnsData[key]) ? (
+                    dnsData[key].map((record, index) => (
                       <li key={index} className="flex items-center gap-2 ml-4">
                         <Check className="text-green-500" size={14} />
                         {record}
                       </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null
-            )}
+                    ))
+                  ) : (
+                    <li className="flex items-center gap-2 ml-4">
+                      {dnsData[key]}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
           </div>
         )}
       </div>
